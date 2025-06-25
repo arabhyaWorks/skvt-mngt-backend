@@ -6,6 +6,13 @@ const bodyParser = require("body-parser");
 const app = express();
 app.use(bodyParser.json());
 
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // MySQL connection
 const db = mysql.createConnection({
   host: "vlai-rds.cb40uq8wcu0z.ap-south-1.rds.amazonaws.com",
@@ -24,6 +31,10 @@ db.connect((err) => {
   console.log("MySQL Connected.");
 });
 
+
+app.get("/", (req, res) => {
+  res.send("Welcome to the SKVT Management API");
+});
 // API 0.1: Create a new user
 app.post("/api/users", async (req, res) => {
   const { name, phone, email, password, role, department_id } = req.body;
@@ -61,6 +72,40 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
+// // API: Login
+// app.post("/api/login", (req, res) => {
+//   const { email, password } = req.body;
+//   db.query(
+//     "SELECT * FROM Users WHERE email = ?",
+//     [email],
+//     async (err, results) => {
+//       if (err) {
+//         console.error("Error fetching user:", err);
+//         return res
+//           .status(500)
+//           .json({ error: "Server error", details: err.message });
+//       }
+//       if (results.length === 0)
+//         return res.status(401).json({ error: "User not found" });
+//       const user = results[0];
+//       try {
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch)
+//           return res.status(401).json({ error: "Invalid password" });
+//         res
+//           .status(200)
+//           .json({
+//             message: "Logged in successfully",
+//             user: { user_id: user.user_id, role: user.role },
+//           });
+//       } catch (err) {
+//         console.error("Error comparing passwords:", err);
+//         res.status(500).json({ error: "Server error", details: err.message });
+//       }
+//     }
+//   );
+// });
+
 // API: Login
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
@@ -81,12 +126,22 @@ app.post("/api/login", (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch)
           return res.status(401).json({ error: "Invalid password" });
-        res
-          .status(200)
-          .json({
-            message: "Logged in successfully",
-            user: { user_id: user.user_id, role: user.role },
-          });
+        const userResponse = {
+          id: user.user_id.toString(),
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          isActive: true,
+          createdAt: user.created_at.toISOString()
+        };
+        if (user.department_id !== null) {
+          userResponse.departmentId = user.department_id.toString();
+        }
+        res.status(200).json({
+          message: "Logged in successfully",
+          user: userResponse
+        });
       } catch (err) {
         console.error("Error comparing passwords:", err);
         res.status(500).json({ error: "Server error", details: err.message });

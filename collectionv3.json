@@ -1,0 +1,656 @@
+{
+  "info": {
+    "name": "Temple Management v3",
+    "_postman_id": "a8d6f7e8-c1b4-4i5d-9f6h-8g0c2e1d3f4g",
+    "description": "Postman collection for testing and integrating the Temple Management APIs. All requests use the ngrok endpoint https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/ and include the ngrok-skip-browser-warning header. APIs cover user management, department management, duty points, shifts, and shift assignments. Adjust IDs (e.g., department_id, user_id) based on response data.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User (SuperAdmin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test SuperAdmin\",\n  \"phone\": \"9876543210\",\n  \"email\": \"testsuperadmin@temple.com\",\n  \"password\": \"super123\",\n  \"role\": \"SuperAdmin\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/users",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "users"]
+        },
+        "description": "**Usage**: Creates a new SuperAdmin user.\n\n**Body Parameters**:\n- `name`: String, user’s full name.\n- `phone`: String, phone number (15 chars max).\n- `email`: String, unique email address.\n- `password`: String, user password (will be hashed).\n- `role`: String, must be 'SuperAdmin'.\n\n**Response**: Returns `user_id` of the created user.\n\n**Frontend Notes**: Use this to register a SuperAdmin. Store the `user_id` for creating departments."
+      },
+      "response": []
+    },
+    {
+      "name": "Create User (DepartmentAdmin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Admin\",\n  \"phone\": \"9876543211\",\n  \"email\": \"testadmin@temple.com\",\n  \"password\": \"admin123\",\n  \"role\": \"DepartmentAdmin\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/users",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "users"]
+        },
+        "description": "**Usage**: Creates a new DepartmentAdmin user.\n\n**Body Parameters**:\n- `name`: String, user’s full name.\n- `phone`: String, phone number.\n- `email`: String, unique email address.\n- `password`: String, user password.\n- `role`: String, must be 'DepartmentAdmin'.\n\n**Response**: Returns `user_id` of the created user.\n\n**Frontend Notes**: Use this to create an admin before assigning them to a department."
+      },
+      "response": []
+    },
+    {
+      "name": "Create User (Employee)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Employee\",\n  \"phone\": \"8765432109\",\n  \"email\": \"testemp@temple.com\",\n  \"password\": \"emp123\",\n  \"role\": \"Employee\",\n  \"department_id\": 1\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/users",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "users"]
+        },
+        "description": "**Usage**: Creates a new Employee user.\n\n**Body Parameters**:\n- `name`: String, user’s full name.\n- `phone`: String, phone number.\n- `email`: String, unique email address.\n- `password`: String, user password.\n- `role`: String, must be 'Employee'.\n- `department_id`: Integer, ID of the department the employee belongs to.\n\n**Response**: Returns `user_id` of the created user.\n\n**Frontend Notes**: Ensure `department_id` exists before creating an employee. Use `user_id` for shift assignments."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Additional Employee 1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Employee Two\",\n  \"phone\": \"9876543212\",\n  \"email\": \"emp2@temple.com\",\n  \"password\": \"emp456\",\n  \"role\": \"Employee\",\n  \"department_id\": 1\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/users",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "users"]
+        },
+        "description": "**Usage**: Creates a second Employee user for testing multiple assignments.\n\n**Body Parameters**: Same as Create User (Employee).\n\n**Response**: Returns `user_id`.\n\n**Frontend Notes**: Use this to populate the department with more employees."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Additional Employee 2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Employee Three\",\n  \"phone\": \"9876543213\",\n  \"email\": \"emp3@temple.com\",\n  \"password\": \"emp789\",\n  \"role\": \"Employee\",\n  \"department_id\": 1\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/users",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "users"]
+        },
+        "description": "**Usage**: Creates a third Employee user for testing.\n\n**Body Parameters**: Same as Create User (Employee).\n\n**Response**: Returns `user_id`.\n\n**Frontend Notes**: Use for shift assignments and free employee checks."
+      },
+      "response": []
+    },
+    {
+      "name": "Login (SuperAdmin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"superadmin@temple.com\",\n  \"password\": \"superadmin\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/login",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "login"]
+        },
+        "description": "**Usage**: Authenticates a SuperAdmin user.\n\n**Body Parameters**:\n- `email`: String, user’s email.\n- `password`: String, user’s password.\n\n**Response**: Returns user details (`user_id`, `role`).\n\n**Frontend Notes**: Use to log in as SuperAdmin for department creation."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Users with Filters",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/users?role=Employee&department_id=1",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "users"],
+          "query": [
+            {
+              "key": "role",
+              "value": "Employee"
+            },
+            {
+              "key": "department_id",
+              "value": "1"
+            }
+          ]
+        },
+        "description": "**Usage**: Retrieves users with optional filters.\n\n**Query Parameters**:\n- `role`: String (optional), e.g., 'Employee'.\n- `department_id`: Integer (optional), e.g., 1.\n- `shift_id`: Integer (optional), filter by shift.\n- `user_id`: Integer (optional), specific user.\n- `name`: String (optional), partial name search.\n\n**Response**: Array of users with `user_id`, `name`, `email`, `phone`, `role`, `department_id`.\n\n**Frontend Notes**: Use to display employee lists or search users."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Department (Existing Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Pooja Department\",\n  \"description\": \"Handles pooja-related activities\",\n  \"admin_id\": 2\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/departments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "departments"]
+        },
+        "description": "**Usage**: Creates a department with an existing DepartmentAdmin.\n\n**Body Parameters**:\n- `name`: String, department name.\n- `description`: String, department description.\n- `admin_id`: Integer, ID of an existing DepartmentAdmin user.\n\n**Response**: Returns `department_id`.\n\n**Frontend Notes**: Ensure `admin_id` is valid. Use `department_id` for employees and duty points."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Department (New Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Security Department\",\n  \"description\": \"Manages temple security\",\n  \"admin_name\": \"New Security Admin\",\n  \"admin_email\": \"securityadmin@temple.com\",\n  \"admin_phone\": \"7654321098\",\n  \"admin_password\": \"secure123\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/departments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "departments"]
+        },
+        "description": "**Usage**: Creates a department and a new DepartmentAdmin.\n\n**Body Parameters**:\n- `name`: String, department name.\n- `description`: String, department description.\n- `admin_name`: String, new admin’s name.\n- `admin_email`: String, new admin’s email.\n- `admin_phone`: String, new admin’s phone.\n- `admin_password`: String, new admin’s password.\n\n**Response**: Returns `department_id`.\n\n**Frontend Notes**: Use when creating a department without an existing admin."
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Departments",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/departments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "departments"]
+        },
+        "description": "**Usage**: Retrieves all departments.\n\n**Query Parameters**: None.\n\n**Response**: Array of departments with `department_id`, `name`, `description`, `admin_id`, `admin_name`, `num_employees`, `shifts`, `duty_points`, `current_shift`.\n\n**Frontend Notes**: Display a list of all departments with their details."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Specific Department (Query Param)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/departments?department_id=1",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "departments"],
+          "query": [
+            {
+              "key": "department_id",
+              "value": "1"
+            }
+          ]
+        },
+        "description": "**Usage**: Retrieves a specific department by ID.\n\n**Query Parameters**:\n- `department_id`: Integer, ID of the department.\n\n**Response**: Department details with `department_id`, `name`, `description`, `admin_id`, `admin_name`, `num_employees`, `shifts`, `duty_points`, `current_shift`.\n\n**Frontend Notes**: Use to display details of a single department."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Detailed Department Data",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/departments/1",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "departments", "1"]
+        },
+        "description": "**Usage**: Retrieves detailed data for a department, including current shift employees.\n\n**Path Parameters**:\n- `department_id`: Integer, ID of the department.\n\n**Response**: Department details with `department_id`, `name`, `description`, `admin_id`, `admin_name`, `num_employees`, `shifts`, `duty_points`, `current_employees`, `current_shift`.\n\n**Frontend Notes**: Use for DepartmentAdmin dashboard to show current shift assignments."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Duty Point",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"YSK 1\",\n  \"description\": \"Main altar for daily pooja\",\n  \"coordinate\": \"12.34,56.78\",\n  \"department_id\": 1\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/duty_points",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "duty_points"]
+        },
+        "description": "**Usage**: Creates a duty point for a department.\n\n**Body Parameters**:\n- `name`: String, duty point name.\n- `description`: String, duty point description.\n- `coordinate`: String, geographic coordinates.\n- `department_id`: Integer, department ID.\n\n**Response**: Returns `duty_point_id`.\n\n**Frontend Notes**: DepartmentAdmin uses this to define duty locations."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Additional Duty Point",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"YSK 2\",\n  \"description\": \"Secondary altar for special pooja\",\n  \"coordinate\": \"12.35,56.79\",\n  \"department_id\": 1\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/duty_points",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "duty_points"]
+        },
+        "description": "**Usage**: Creates another duty point for testing.\n\n**Body Parameters**: Same as Create Duty Point.\n\n**Response**: Returns `duty_point_id`.\n\n**Frontend Notes**: Use to add multiple duty points for assignments."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Shift (Day Shift)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Day Shift\",\n  \"department_id\": 1,\n  \"start_time\": \"00:00:00\",\n  \"end_time\": \"16:00:00\",\n  \"duration\": 8.0\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shifts",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shifts"]
+        },
+        "description": "**Usage**: Creates a day shift for a department.\n\n**Body Parameters**:\n- `name`: String, shift name.\n- `department_id`: Integer, department ID.\n- `start_time`: String, shift start time (HH:MM:SS).\n- `end_time`: String, shift end time (HH:MM:SS).\n- `duration`: Float, shift duration in hours.\n\n**Response**: Returns `shift_id`.\n\n**Frontend Notes**: DepartmentAdmin uses this to define shift schedules."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Shift (Night Shift)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Night Shift\",\n  \"department_id\": 1,\n  \"start_time\": \"20:00:00\",\n  \"end_time\": \"04:00:00\",\n  \"duration\": 8.0\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shifts",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shifts"]
+        },
+        "description": "**Usage**: Creates a night shift for a department.\n\n**Body Parameters**: Same as Create Shift (Day Shift).\n\n**Response**: Returns `shift_id`.\n\n**Frontend Notes**: Use to define night shift for testing different time slots."
+      },
+      "response": []
+    },
+    {
+      "name": "Assign Employee to Shift (Day Shift, YSK 1)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"duty_point_id\": 1,\n  \"shift_id\": 1,\n  \"employee_id\": 3,\n  \"department_id\": 1,\n  \"start_date\": \"2025-06-01\",\n  \"end_date\": \"2025-06-20\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shift_assignments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shift_assignments"]
+        },
+        "description": "**Usage**: Assigns an employee to a duty point for a shift.\n\n**Body Parameters**:\n- `duty_point_id`: Integer, duty point ID.\n- `shift_id`: Integer, shift ID.\n- `employee_id`: Integer, employee ID.\n- `department_id`: Integer, department ID.\n- `start_date`: String, start date (YYYY-MM-DD).\n- `end_date`: String, end date (YYYY-MM-DD, optional for OneTime).\n- `specific_date`: String, specific date for OneTime assignments (optional).\n\n**Response**: Returns `assignment_id`.\n\n**Frontend Notes**: DepartmentAdmin uses this to schedule employees. Ensure IDs exist."
+      },
+      "response": []
+    },
+    {
+      "name": "Assign Employee to Shift (Day Shift, YSK 1, Additional)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"duty_point_id\": 1,\n  \"shift_id\": 1,\n  \"employee_id\": 4,\n  \"department_id\": 1,\n  \"start_date\": \"2025-06-15\",\n  \"end_date\": \"2025-06-25\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shift_assignments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shift_assignments"]
+        },
+        "description": "**Usage**: Assigns another employee to the same shift and duty point.\n\n**Body Parameters**: Same as Assign Employee to Shift.\n\n**Response**: Returns `assignment_id`.\n\n**Frontend Notes**: Tests multiple employees at the same duty point."
+      },
+      "response": []
+    },
+    {
+      "name": "Assign Employee to Shift (Night Shift, YSK 2)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"duty_point_id\": 2,\n  \"shift_id\": 2,\n  \"employee_id\": 5,\n  \"department_id\": 1,\n  \"start_date\": \"2025-06-18\",\n  \"end_date\": \"2025-06-20\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shift_assignments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shift_assignments"]
+        },
+        "description": "**Usage**: Assigns an employee to a different shift and duty point.\n\n**Body Parameters**: Same as Assign Employee to Shift.\n\n**Response**: Returns `assignment_id`.\n\n**Frontend Notes**: Tests night shift assignments."
+      },
+      "response": []
+    },
+    {
+      "name": "Assign Employee to Shift (Past Assignment, Day Shift)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"duty_point_id\": 1,\n  \"shift_id\": 1,\n  \"employee_id\": 5,\n  \"department_id\": 1,\n  \"start_date\": \"2025-06-01\",\n  \"end_date\": \"2025-06-10\"\n}"
+        },
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shift_assignments",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shift_assignments"]
+        },
+        "description": "**Usage**: Creates a past assignment for testing date range filtering.\n\n**Body Parameters**: Same as Assign Employee to Shift.\n\n**Response**: Returns `assignment_id`.\n\n**Frontend Notes**: Should not appear in current shift employees."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Duty Points for Department",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/duty_points/1",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "duty_points", "1"]
+        },
+        "description": "**Usage**: Retrieves all duty points for a department with current shift data.\n\n**Path Parameters**:\n- `department_id`: Integer, department ID.\n\n**Response**: Array of duty points with `duty_point_id`, `name`, `description`, `num_people`, `current_shift`.\n\n**Frontend Notes**: Use to display duty points and their current assignments."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Shifts for Department",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/shifts/1",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "shifts", "1"]
+        },
+        "description": "**Usage**: Retrieves all shifts for a department.\n\n**Path Parameters**:\n- `department_id`: Integer, department ID.\n\n**Response**: Array of shifts with `shift_id`, `name`, `start_time`, `end_time`, `duration`.\n\n**Frontend Notes**: Use to populate shift selection dropdowns."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Free Employees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": {
+          "raw": "https://c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app/api/free_employees/1?shift_id=1&start_date=2025-06-21&end_date=2025-06-30",
+          "protocol": "https",
+          "host": ["c4eb-2402-a00-1b2-4495-4d20-6885-7bde-f31d.ngrok-free.app"],
+          "path": ["api", "free_employees", "1"],
+          "query": [
+            {
+              "key": "shift_id",
+              "value": "1"
+            },
+            {
+              "key": "start_date",
+              "value": "2025-06-21"
+            },
+            {
+              "key": "end_date",
+              "value": "2025-06-30"
+            }
+          ]
+        },
+        "description": "**Usage**: Retrieves employees not assigned to a shift for a given date range.\n\n**Path Parameters**:\n- `department_id`: Integer, department ID.\n\n**Query Parameters**:\n- `shift_id`: Integer, shift ID.\n- `start_date`: String, start date (YYYY-MM-DD).\n- `end_date`: String, end date (YYYY-MM-DD).\n- `specific_date`: String (optional), for OneTime assignments.\n\n**Response**: Array of employees with `user_id`, `name`, `phone`, `email`.\n\n**Frontend Notes**: Use to show available employees for shift assignments."
+      },
+      "response": []
+    }
+  ]
+}
