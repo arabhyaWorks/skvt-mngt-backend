@@ -72,40 +72,6 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-// // API: Login
-// app.post("/api/login", (req, res) => {
-//   const { email, password } = req.body;
-//   db.query(
-//     "SELECT * FROM Users WHERE email = ?",
-//     [email],
-//     async (err, results) => {
-//       if (err) {
-//         console.error("Error fetching user:", err);
-//         return res
-//           .status(500)
-//           .json({ error: "Server error", details: err.message });
-//       }
-//       if (results.length === 0)
-//         return res.status(401).json({ error: "User not found" });
-//       const user = results[0];
-//       try {
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch)
-//           return res.status(401).json({ error: "Invalid password" });
-//         res
-//           .status(200)
-//           .json({
-//             message: "Logged in successfully",
-//             user: { user_id: user.user_id, role: user.role },
-//           });
-//       } catch (err) {
-//         console.error("Error comparing passwords:", err);
-//         res.status(500).json({ error: "Server error", details: err.message });
-//       }
-//     }
-//   );
-// });
-
 // API: Login
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
@@ -152,43 +118,155 @@ app.post("/api/login", (req, res) => {
 
 // API: Get all users with filters
 app.get("/api/users", (req, res) => {
-  const { role, department_id, shift_id, user_id, name } = req.query;
-  let query =
-    "SELECT user_id, name, email, phone, role, department_id FROM Users WHERE 1=1";
-  const params = [];
+  const { role, department_id, shift_id, duty_point_id, user_id, name, page = 1, limit = 10 } = req.query;
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+
+  if (isNaN(pageNum) || pageNum < 1 || isNaN(limitNum) || limitNum < 1) {
+    return res.status(400).json({ error: "Invalid page or limit parameters" });
+  }
+
+  const offset = (pageNum - 1) * limitNum;
+
+  // Base query for counting total records
+  let countQuery = `
+    SELECT COUNT(DISTINCT u.user_id) AS total
+    FROM Users u
+    LEFT JOIN ShiftAssignments sa ON u.user_id = sa.employee_id
+    WHERE 1=1
+  `;
+  const countParams = [];
+
+  // Base query for fetching paginated data
+  let dataQuery = `
+    SELECT 
+      u.user_id, 
+      u.name, 
+      u.email, 
+      u.phone, 
+      u.role, 
+      u.department_id,
+      d.name AS department_name,
+      sa.shift_id,
+      s.name AS shift_name,
+      s.start_time,
+      s.end_time,
+      sa.duty_point_id,
+      dp.name AS duty_point_name,
+      sa.start_date AS from_date,
+      COALESCE(sa.end_date, sa.specific_date) AS to_date,
+      CASE 
+        WHEN CURDATE() BETWEEN sa.start_date AND COALESCE(sa.end_date, sa.specific_date, '9999-12-31')
+        AND (
+          (s.end_time > s.start_time AND CURRENT_TIME() BETWEEN s.start_time AND s.end_time)
+          OR
+          (s.end_time <= s.start_time AND 
+           (CURRENT_TIME() >= s.start_time OR CURRENT_TIME() < s.end_time)
+          )
+        ) THEN true
+        ELSE false
+      END AS active
+    FROM Users u
+    LEFT JOIN Departments d ON u.department_id = d.department_id
+    LEFT JOIN ShiftAssignments sa ON u.user_id = sa.employee_id
+    LEFT JOIN Shifts s ON sa.shift_id = s.shift_id
+    LEFT JOIN DutyPoints dp ON sa.duty_point_id = dp.duty_point_id
+    WHERE 1=1
+  `;
+  const dataParams = [];
+
+  // Apply filters to both queries
   if (role) {
-    query += " AND role = ?";
-    params.push(role);
+    countQuery += " AND u.role = ?";
+    dataQuery += " AND u.role = ?";
+    countParams.push(role);
+    dataParams.push(role);
   }
   if (department_id) {
-    query += " AND department_id = ?";
-    params.push(department_id);
+    countQuery += " AND u.department_id = ?";
+    dataQuery += " AND u.department_id = ?";
+    countParams.push(department_id);
+    dataParams.push(department_id);
   }
   if (shift_id) {
-    query +=
-      " AND user_id IN (SELECT employee_id FROM ShiftAssignments WHERE shift_id = ?)";
-    params.push(shift_id);
+    countQuery += " AND sa.shift_id = ?";
+    dataQuery += " AND sa.shift_id = ?";
+    countParams.push(shift_id);
+    dataParams.push(shift_id);
+  }
+  if (duty_point_id) {
+    countQuery += " AND sa.duty_point_id = ?";
+    dataQuery += " AND sa.duty_point_id = ?";
+    countParams.push(duty_point_id);
+    dataParams.push(duty_point_id);
   }
   if (user_id) {
-    query += " AND user_id = ?";
-    params.push(user_id);
+    countQuery += " AND u.user_id = ?";
+    dataQuery += " AND u.user_id = ?";
+    countParams.push(user_id);
+    dataParams.push(user_id);
   }
   if (name) {
-    query += " AND name LIKE ?";
-    params.push(`%${name}%`);
+    countQuery += " AND u.name LIKE ?";
+    dataQuery += " AND u.name LIKE ?";
+    countParams.push(`%${name}%`);
+    dataParams.push(`%${name}%`);
   }
-  db.query(query, params, (err, results) => {
-    if (err) {
-      console.error("Error fetching users:", err);
-      return res
-        .status(500)
-        .json({ error: "Error fetching users", details: err.message });
+
+  // Add pagination to data query
+  dataQuery += ` LIMIT ? OFFSET ?`;
+  dataParams.push(limitNum, offset);
+
+  // Execute both queries
+  db.query(countQuery, countParams, (countErr, countResults) => {
+    if (countErr) {
+      console.error("Error fetching user count:", countErr);
+      return res.status(500).json({ error: "Error fetching users", details: countErr.message });
     }
-    res.json(results);
+
+    const total = countResults[0].total;
+
+    db.query(dataQuery, dataParams, (dataErr, dataResults) => {
+      if (dataErr) {
+        console.error("Error fetching users:", dataErr);
+        return res.status(500).json({ error: "Error fetching users", details: dataErr.message });
+      }
+
+      // Format results
+      const formattedResults = dataResults.map(user => ({
+        user_id: user.user_id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        department_id: user.department_id,
+        department_name: user.department_name || "",
+        shift_id: user.shift_id || "",
+        shift_name: user.shift_name || "",
+        duty_point_id: user.duty_point_id || "",
+        duty_point_name: user.duty_point_name || "",
+        start_time: user.start_time ? user.start_time.toString().split(' ')[4] : "",
+        end_time: user.end_time ? user.end_time.toString().split(' ')[4] : "",
+        from_date: user.from_date ? user.from_date.toISOString().split('T')[0] : "",
+        to_date: user.to_date ? user.to_date.toISOString().split('T')[0] : "",
+        active: !!user.active
+      }));
+
+      // Calculate total pages
+      const totalPages = Math.ceil(total / limitNum);
+
+      res.json({
+        data: formattedResults,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages
+        }
+      });
+    });
   });
 });
-
-// API 1: Create department (SuperAdmin only)
 app.post("/api/departments", async (req, res) => {
   const {
     name,
@@ -200,6 +278,7 @@ app.post("/api/departments", async (req, res) => {
     admin_password,
   } = req.body;
   let adminId;
+
   if (admin_id) {
     db.query(
       'SELECT * FROM Users WHERE user_id = ? AND role = "DepartmentAdmin"',
@@ -231,7 +310,19 @@ app.post("/api/departments", async (req, res) => {
               .json({ error: "Error creating admin", details: err.message });
           }
           adminId = result.insertId;
-          insertDepartment(name, description, adminId, res);
+          insertDepartment(name, description, adminId, res, () => {
+            // Update the new admin's department_id
+            db.query(
+              'UPDATE Users SET department_id = ? WHERE user_id = ?',
+              [res.locals.department_id, adminId],
+              (updateErr) => {
+                if (updateErr) {
+                  console.error("Error updating admin's department_id:", updateErr);
+                  // Note: Not returning an error to maintain original response
+                }
+              }
+            );
+          });
         }
       );
     } catch (err) {
@@ -245,7 +336,7 @@ app.post("/api/departments", async (req, res) => {
   }
 });
 
-function insertDepartment(name, description, adminId, res) {
+function insertDepartment(name, description, adminId, res, callback) {
   db.query(
     "INSERT INTO Departments (name, description, admin_id) VALUES (?, ?, ?)",
     [name, description, adminId],
@@ -256,12 +347,14 @@ function insertDepartment(name, description, adminId, res) {
           .status(500)
           .json({ error: "Error creating department", details: err.message });
       }
+      res.locals.department_id = result.insertId;
       res
         .status(201)
         .json({
           message: "Department created successfully",
           department_id: result.insertId,
         });
+      if (callback) callback();
     }
   );
 }
@@ -332,24 +425,82 @@ app.get("/api/departments/:department_id", (req, res) => {
   }
   const query = `
         SET SESSION time_zone = '+05:30';
-        SELECT d.department_id, d.name, d.description, d.admin_id, u.name as admin_name,
-            (SELECT COUNT(*) FROM Users WHERE department_id = d.department_id AND role = 'Employee') as num_employees,
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('shift_id', s.shift_id, 'name', s.name, 'start_time', s.start_time, 'end_time', s.end_time, 'duration', s.duration))
-             FROM Shifts s WHERE s.department_id = d.department_id) as shifts,
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('duty_point_id', dp.duty_point_id, 'name', dp.name, 'description', dp.description,
-                'num_people', (SELECT COUNT(*) FROM ShiftAssignments sa 
-                               JOIN Shifts s ON sa.shift_id = s.shift_id
-                               WHERE sa.duty_point_id = dp.duty_point_id
-                               AND CURDATE() BETWEEN sa.start_date AND IFNULL(sa.end_date, '9999-12-31')
-                               AND CURRENT_TIME() BETWEEN s.start_time AND s.end_time)))
-             FROM DutyPoints dp WHERE dp.department_id = d.department_id) as duty_points,
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('user_id', u.user_id, 'name', u.name, 'phone', u.phone, 'email', u.email, 'duty_point_id', sa.duty_point_id))
-             FROM ShiftAssignments sa
-             JOIN Users u ON sa.employee_id = u.user_id
-             JOIN Shifts s ON sa.shift_id = s.shift_id
-             WHERE s.department_id = d.department_id
-             AND CURDATE() BETWEEN sa.start_date AND IFNULL(sa.end_date, '9999-12-31')
-             AND CURRENT_TIME() BETWEEN s.start_time AND s.end_time) as current_employees
+        SELECT 
+          d.department_id, 
+          d.name, 
+          d.description, 
+          d.admin_id, 
+          u.name as admin_name,
+          (SELECT COUNT(*) FROM Users WHERE department_id = d.department_id AND role = 'Employee') as num_employees,
+          (SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'shift_id', s.shift_id, 
+               'name', s.name, 
+               'start_time', s.start_time, 
+               'end_time', s.end_time, 
+               'duration', s.duration,
+               'num_people', (
+                 SELECT COUNT(*) 
+                 FROM ShiftAssignments sa 
+                 JOIN Shifts s2 ON sa.shift_id = s2.shift_id
+                 WHERE sa.shift_id = s.shift_id
+                 AND CURDATE() BETWEEN sa.start_date AND IFNULL(sa.end_date, '9999-12-31')
+                 AND (
+                   (s2.end_time > s2.start_time AND CURRENT_TIME() BETWEEN s2.start_time AND s2.end_time)
+                   OR
+                   (s2.end_time <= s2.start_time AND 
+                    (CURRENT_TIME() >= s2.start_time OR CURRENT_TIME() < s2.end_time)
+                   )
+                 )
+               )
+             )
+           )
+           FROM Shifts s 
+           WHERE s.department_id = d.department_id) as shifts,
+          (SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'duty_point_id', dp.duty_point_id, 
+               'name', dp.name, 
+               'description', dp.description,
+               'num_people', (
+                 SELECT COUNT(*) 
+                 FROM ShiftAssignments sa 
+                 JOIN Shifts s ON sa.shift_id = s.shift_id
+                 WHERE sa.duty_point_id = dp.duty_point_id
+                 AND CURDATE() BETWEEN sa.start_date AND IFNULL(sa.end_date, '9999-12-31')
+                 AND (
+                   (s.end_time > s.start_time AND CURRENT_TIME() BETWEEN s.start_time AND s.end_time)
+                   OR
+                   (s.end_time <= s.start_time AND 
+                    (CURRENT_TIME() >= s.start_time OR CURRENT_TIME() < s.end_time)
+                   )
+                 )
+               )
+             )
+           )
+           FROM DutyPoints dp 
+           WHERE dp.department_id = d.department_id) as duty_points,
+          (SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'user_id', u.user_id, 
+               'name', u.name, 
+               'phone', u.phone, 
+               'email', u.email, 
+               'duty_point_id', sa.duty_point_id
+             )
+           )
+           FROM ShiftAssignments sa
+           JOIN Users u ON sa.employee_id = u.user_id
+           JOIN Shifts s ON sa.shift_id = s.shift_id
+           WHERE s.department_id = d.department_id
+           AND CURDATE() BETWEEN sa.start_date AND IFNULL(sa.end_date, '9999-12-31')
+           AND (
+             (s.end_time > s.start_time AND CURRENT_TIME() BETWEEN s.start_time AND s.end_time)
+             OR
+             (s.end_time <= s.start_time AND 
+              (CURRENT_TIME() >= s.start_time OR CURRENT_TIME() < s.end_time)
+             )
+           )) as current_employees
         FROM Departments d
         LEFT JOIN Users u ON d.admin_id = u.user_id
         WHERE d.department_id = ?;
@@ -381,9 +532,54 @@ app.get("/api/departments/:department_id", (req, res) => {
           hour12: false,
           timeZone: "Asia/Kolkata",
         });
-        return now >= s.start_time && now <= s.end_time;
+        return (
+          (s.end_time > s.start_time && now >= s.start_time && now <= s.end_time) ||
+          (s.end_time <= s.start_time && (now >= s.start_time || now < s.end_time))
+        );
       }) || null;
     res.json(dept);
+  });
+});
+
+app.get("/api/department-details", (req, res) => {
+  const { department_id } = req.query;
+  let query = `
+    SELECT 
+      d.department_id,
+      d.name,
+      (SELECT JSON_ARRAYAGG(JSON_OBJECT('shift_id', s.shift_id, 'name', s.name))
+       FROM Shifts s WHERE s.department_id = d.department_id) as shifts,
+      (SELECT JSON_ARRAYAGG(JSON_OBJECT('duty_point_id', dp.duty_point_id, 'name', dp.name))
+       FROM DutyPoints dp WHERE dp.department_id = d.department_id) as duty_points
+    FROM Departments d
+  `;
+  const params = [];
+  if (department_id) {
+    query += " WHERE d.department_id = ?";
+    params.push(parseInt(department_id, 10));
+  }
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error("SQL Error:", {
+        message: err.message,
+        sql: err.sql,
+        sqlState: err.sqlState,
+        sqlMessage: err.sqlMessage,
+        code: err.code
+      });
+      return res.status(500).json({ error: "Error fetching department details", details: err.message });
+    }
+    if (department_id && results.length === 0) {
+      return res.status(404).json({ error: "Department not found" });
+    }
+    const formattedResults = results.map(dept => ({
+      department_id: dept.department_id,
+      name: dept.name,
+      shifts: dept.shifts || [],
+      duty_points: dept.duty_points || []
+    }));
+    res.json(department_id ? formattedResults[0] : formattedResults);
   });
 });
 
