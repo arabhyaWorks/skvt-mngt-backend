@@ -861,12 +861,11 @@ app.post("/api/shift_assignments", (req, res) => {
       const assignment_type = specific_date ? "OneTime" : "Recurring";
       const conflictQuery = `
         SET SESSION time_zone = '+05:30';
-        ${
-          specific_date
-            ? `SELECT employee_id FROM ShiftAssignments sa 
+        ${specific_date
+          ? `SELECT employee_id FROM ShiftAssignments sa 
                JOIN Shifts s ON sa.shift_id = s.shift_id
                WHERE sa.employee_id = ? AND sa.specific_date = ? AND s.shift_id = ?`
-            : `SELECT employee_id FROM ShiftAssignments sa 
+          : `SELECT employee_id FROM ShiftAssignments sa 
                JOIN Shifts s ON sa.shift_id = s.shift_id
                WHERE sa.employee_id = ? AND s.shift_id = ? AND (
                    (sa.start_date <= ? AND (sa.end_date >= ? OR sa.end_date IS NULL)) OR
@@ -972,12 +971,11 @@ app.get("/api/free_employees/:department_id", (req, res) => {
   const { shift_id, start_date, end_date, specific_date } = req.query;
   const conflictQuery = `
     SET SESSION time_zone = '+05:30';
-    ${
-      specific_date
-        ? `SELECT employee_id FROM ShiftAssignments sa 
+    ${specific_date
+      ? `SELECT employee_id FROM ShiftAssignments sa 
            JOIN Shifts s ON sa.shift_id = s.shift_id
            WHERE sa.specific_date = ? AND s.shift_id = ?`
-        : `SELECT employee_id FROM ShiftAssignments sa 
+      : `SELECT employee_id FROM ShiftAssignments sa 
            JOIN Shifts s ON sa.shift_id = s.shift_id
            WHERE s.shift_id = ? AND (
                (sa.start_date <= ? AND (sa.end_date >= ? OR sa.end_date IS NULL)) OR
@@ -1016,6 +1014,15 @@ app.get("/api/free_employees/:department_id", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use. Please use a different port or stop the other process.`);
+  } else {
+    console.error("Server error:", err);
+  }
+  process.exit(1);
 });
