@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "nodemonConfig": {
+    "ignore": [".env"]
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
